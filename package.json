@@ -6,12 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "compile": "solcjs --abi --include-path  node_modules/ --base-path . blockchain/contracts/NFT_Platform.sol --output-dir blockchain/build"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^4.8.1",
+    "axios": "^1.3.3",
+    "bulma": "^0.9.4",
     "next": "13.1.6",
+    "nft.storage": "^7.0.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "solc": "^0.8.11",
+    "web3": "^1.7.4"
   },
   "devDependencies": {
     "eslint": "8.34.0",
