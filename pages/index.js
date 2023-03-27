@@ -5,12 +5,16 @@ import Web3 from 'web3' // npm install web3@1.7.4
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Modal from '../components/Modal'
+import ModalS from '../components/ModalS'
 import NFTPlatform from '../blockchain/nft_platform'
 import PlatformNFT from '../blockchain/platform_nft'
+import RentablePlatformNFT from '../blockchain/rentablePlatformNFT'
 import DBT from '../blockchain/dbtToken'
 import YourNFTs from '../components/yourNFTs'
 import AINFT from '../components/ainft'
 import STAKEDNFT from '../components/stakedNFT'
+import RENTABLE from '../components/rentable'
+import MARKETPLACE from '../components/marketplace'
 
 export default function Home() {
 
@@ -22,12 +26,12 @@ export default function Home() {
   const [addr, setAddr] = useState()
   const [nftPlatform, setNftPlatform] = useState()
   const [platformNFT, setPlatformNFT] = useState()
+  const [rentable, setRentable] = useState()
   const [nftPlatformAddress, setNftPlatformAddress] = useState()
   const [allListedItems, setAllListedItems] = useState([])
   const [mintAIFee, setMintAIFee] = useState()
-  const [yourNfts, setYourNfts] = useState([])
-  const [allStakingItems, setAllStakingItems] = useState([])
   const [showModal, setShowModal] = useState(false) 
+  const [showModals, setShowModals] = useState(false) 
   const [image, setImage] = useState()
   const [price, setPrice] = useState()
   const [attributes, setAttributes] = useState([])
@@ -39,14 +43,17 @@ export default function Home() {
   const [dbtBalance, setDbtBalance] = useState()
   const [dbtContract, setDbtContract] = useState()
   const [rewardsPerSecond, setRewardsPerSecond] = useState()
+  const [owner, setOwner] = useState()
+  const [mintReward, setMintReward] = useState()
+  const [metadata, setMetadata] = useState()
 
   useEffect(() => {
-    
     if (address) {
       loadTokenData()
       addressChanged()
       loadContractData()
     }
+    
   }, [address, nftPlatform])
 
   const connectWalletHandler = async () => {
@@ -71,9 +78,12 @@ export default function Home() {
             setNftPlatform(nftPlatform)
             let platformNFT = PlatformNFT(web3)
             setPlatformNFT(platformNFT)
+            let rentable = RentablePlatformNFT(web3)
+            setRentable(rentable)
             setNftPlatformAddress(nftPlatform.options.address)
             loadContractData()
             loadTokenData()
+            // loadRentableContractData()
           }
         } catch (error) {
           console.log(error.message)
@@ -120,13 +130,14 @@ export default function Home() {
       setDbtSymbol(_dbtSymbol)
       const _dbtBalance = await _dbt.methods.balanceOf(address).call()
       let balance = web3.utils.fromWei(_dbtBalance)
+      balance = parseFloat(balance).toFixed(4)
       setDbtBalance(balance)
     }
   }
 
+
   const loadContractData = async () => {
-    console.log("nftPlatform", nftPlatform)
-    if (nftPlatform) {
+  if (nftPlatform) {
       let _rewardsPerSecond = await nftPlatform.methods.rewardsPerSecond().call()
       setRewardsPerSecond(_rewardsPerSecond);
       let allItems = await nftPlatform.methods.getAllListingItem().call()
@@ -134,92 +145,43 @@ export default function Home() {
       let _tokenIds = await platformNFT.methods.getTokenIds().call()
       _tokenIds = _tokenIds.toString()
       console.log("_tokenIds", _tokenIds.toString())
-      let _mintAIFee = await nftPlatform.methods.getMintAIFee().call()
-      setMintAIFee(_mintAIFee)
+      // let _mintAIFee = await nftPlatform.methods.getMintAIFee().call()
+      // setMintAIFee(_mintAIFee)
+      let _mintReward = await nftPlatform.methods.getMintReward().call()
+      _mintReward = web3.utils.fromWei(_mintReward)
+      setMintReward(_mintReward)
+      let _owner = await nftPlatform.methods.getOwner().call()
+      setOwner(_owner)
+
       let _allListedItems = []
-      let _yourNfts = []
       for (let i=0; i<allItems.length; i++) {
-        console.log("nftPrice", allItems[i].nftPrice)
-        console.log("tokenUri", allItems[i].tokenUri)
-        console.log("is Minted", allItems[i].isMinted)
-        let tokenMetadata = await fetch(allItems[i].tokenUri).then((response) => response.json())
-        console.log("image", tokenMetadata["image"])
-        console.log("attributes length", tokenMetadata["attributes"].length)
-        const item = {
-          image: tokenMetadata["image"],
-          name: tokenMetadata["name"],
-          description: tokenMetadata["description"],
-          attributes: tokenMetadata["attributes"], 
-          nftPrice: allItems[i].nftPrice,
-          tokenUri: allItems[i].tokenUri,
-          isMinted: allItems[i].isMinted,
-          itemId: i+1,
-        }
-        _allListedItems = [..._allListedItems, item]
-      }
-  
-      let _royalty
-      for (let id=1; id<=_tokenIds; id++) {
-        _royalty = false
-        let owner = await platformNFT.methods.ownerOf(id).call()
-        console.log("tokenId", id)
-        console.log("owner", owner)
-        if (owner == address) {
-          let yourTokenUri = await platformNFT.methods.tokenURI(id).call()
-          console.log("your token uri", yourTokenUri)
-          yourTokenUri = yourTokenUri.replace("ipfs://", "https://nftstorage.link/ipfs/")
-          let metadata = await fetch(yourTokenUri).then((response) => response.json())
-          let result = await platformNFT.methods.royaltyInfo(id, web3.utils.toWei("0.2").toString()).call()
-          console.log("receiver", result[0])
-          console.log("receiverroyalty", result[1])
-          if (result[0] != "0xcFd8bF3E48a9aEdeba725c296388C05c787aB8af") {
-            _royalty = "Yes"
-          } else {
-            _royalty = "No"
+        if (allItems[i].tokenUri != "") {
+          console.log("nftPrice", allItems[i].nftPrice)
+          console.log("tokenUri", allItems[i].tokenUri)
+          console.log("is Minted", allItems[i].isMinted)
+          let tokenMetadata = await fetch(allItems[i].tokenUri).then((response) => response.json())
+          console.log("image", tokenMetadata["image"])
+          console.log("attributes length", tokenMetadata["attributes"].length)
+          const item = {
+            image: tokenMetadata["image"],
+            name: tokenMetadata["name"],
+            description: tokenMetadata["description"],
+            attributes: tokenMetadata["attributes"], 
+            nftPrice: allItems[i].nftPrice,
+            tokenUri: allItems[i].tokenUri,
+            isMinted: allItems[i].isMinted,
+            itemId: i+1,
+            metadata: allItems[i].tokenUri,
           }
-          console.log("royalty", _royalty)
-          const yourItem = {
-            image: metadata["image"],
-            name: metadata["name"],
-            description: metadata["description"],
-            attributes: metadata["attributes"],
-            royalty: _royalty, 
-            tokenId: id,
-          }
-          console.log("yourItem", yourItem)
-          _yourNfts = [..._yourNfts, yourItem]
-        }
-      }
-  
-      let _allStakingItems = []
-      let allStakingItems = await nftPlatform.methods.getAllStakingItem().call()
-      console.log("alStakingItems length", allStakingItems.length)
-      for (let c=0; c<allStakingItems.length; c++) {
-        if (allStakingItems[c].stakedStart > 0) {
-          let yourTokenUri = await platformNFT.methods.tokenURI(allStakingItems[c].tokenId).call()
-          console.log("your token uri", yourTokenUri)
-          yourTokenUri = yourTokenUri.replace("ipfs://", "https://nftstorage.link/ipfs/")
-          let metadata = await fetch(yourTokenUri).then((response) => response.json())
-          console.log(allStakingItems[c].stakedStart)
-          console.log(allStakingItems[c].owner)
-          console.log(allStakingItems[c].tokenId)
-          const stakingItem = {
-            stakedStart: allStakingItems[c].stakedStart,
-            owner: allStakingItems[c].owner,
-            tokenId: allStakingItems[c].tokenId,
-            index: allStakingItems[c].index,
-            stakedImage: metadata["image"],
-          }
-          _allStakingItems = [..._allStakingItems, stakingItem]
+          _allListedItems = [..._allListedItems, item]
         }
       }
       setAllListedItems(_allListedItems)
-      setYourNfts(_yourNfts)
-      setAllStakingItems(_allStakingItems)
-      }
+    }
   }
 
-  const displayModal = async (_price, _image, _tokenUri, _attributes, _name, _description, _itemId, _isMinted) => {
+  const displayModal = async (_price, _image, _tokenUri, _attributes, _name, _description, _itemId, _isMinted, _metadata) => {
+    setShowModal(true)
     setImage(_image)
     _price = web3.utils.fromWei(_price)
     setPrice(_price)
@@ -228,29 +190,41 @@ export default function Home() {
     setDesription(_description)
     setItemId(_itemId)
     setIsMinted(_isMinted)
-    setShowModal(true)
+    setMetadata(_metadata)
   }
 
   const mintNFT = async (_itemId, _price) => {
+    setShowModal(false)
+    setShowModals(true)
     console.log("itemId", _itemId)
     console.log("price", _price.toString())
     _price = web3.utils.toWei(_price)
-    await nftPlatform.methods.platformMint(_itemId).send({ from: address, value: _price.toString() })
-    loadContractData()
-    loadTokenData()
-    setShowModal(false)
+    try {
+      let newTokenId = await nftPlatform.methods.platformMint(_itemId).send({ from: address, value: _price.toString() })
+      console.log("newTokenId", newTokenId)
+      loadContractData()
+      loadTokenData()
+      setShowModals(false)
+    } catch (error) {
+      setShowModals(false)
+    }
   }
 
   const mintNFTwithRoyalty = async (_itemId, _price) => {
+    setShowModal(false)
+    setShowModals(true)
     console.log("itemId", _itemId)
     console.log("price", _price.toString())
     _price = web3.utils.toWei(_price)
-    let _fee = web3.utils.toWei("1")
-    // await dbtContract.methods.approve(nftPlatformAddress, _fee.toString()).send({ from: address })
-    await nftPlatform.methods.mintWithRoyalty(_itemId, 300).send({ from: address, value: _price })
-    loadContractData()
-    loadTokenData()
-    setShowModal(false)
+    try {
+      // let _fee = web3.utils.toWei("1")
+      let newTokenId = await nftPlatform.methods.mintWithRoyalty(_itemId, 300).send({ from: address, value: _price })
+      loadContractData()
+      loadTokenData()
+      setShowModals(false)
+    } catch (error) {
+      setShowModals(false)
+    }
   }
 
   return (
@@ -287,19 +261,30 @@ export default function Home() {
               </Link>
               <Link legacyBehavior href="/?page=yourNFT">
                 <a class="navbar-item">
-                  <strong>Your NFTs</strong>
+                  <strong>My NFTs</strong>
                 </a>
               </Link>
               <Link legacyBehavior href="/?page=stakedNFT">
                 <a class="navbar-item">
-                  <strong>Your Staked NFTs</strong>
+                  <strong>My Staked NFTs</strong>
                 </a>
               </Link>
-              <Link legacyBehavior href="/?page=aiNFT">
+              {/* <Link legacyBehavior href="/?page=aiNFT">
                 <a class="navbar-item">
                   <strong>A.I. NFT</strong>
                 </a>
+              </Link> */}
+              <Link legacyBehavior href="/?page=rentable">
+                <a class="navbar-item">
+                  <strong>Rentable NFTs</strong>
+                </a>
               </Link>
+              <Link legacyBehavior href="/?page=marketplace">
+                <a class="navbar-item">
+                  <strong>Marketplace</strong>
+                </a>
+              </Link>
+               
                   </>
                 : <></>
             }
@@ -308,9 +293,9 @@ export default function Home() {
 
             <div class="navbar-end">
               <div class="navbar-item">
-                <div class="box mr-4 mb-1">
                   <strong>{dbtSymbol} Balance: {dbtBalance} DBT</strong>
-                </div>
+              </div>
+              <div class="navbar-item">
                 <button onClick={connectWalletHandler} className='button is-link mb-1'>
                   <span className='is-link has-text-weight-bold'>
                     {address && address.length > 0
@@ -327,12 +312,14 @@ export default function Home() {
           page=='yourNFT'
             ?
               <YourNFTs
-                yourNfts={yourNfts}
                 nftPlatform={nftPlatform}
                 platformNFT={platformNFT}
                 nftPlatformAddress={nftPlatformAddress}
                 address={address}
                 rewardsPerSecond={rewardsPerSecond}
+                web3={web3}
+                dbtContract={dbtContract}
+                owner={owner}
               />
             :
               page=='aiNFT'
@@ -342,36 +329,52 @@ export default function Home() {
                     mintAIFee={mintAIFee}
                     web3={web3}
                     address={address}
-                    dbtContract={dbtContract}
                     nftPlatformAddress={nftPlatformAddress}
+                    platformNFT={platformNFT}
                   />
                 :
                   page=='stakedNFT'
                     ?
                       <STAKEDNFT
                         nftPlatform={nftPlatform}
+                        platformNFT={platformNFT}
                         web3={web3}
                         address={address}
-                        allStakingItems={allStakingItems}  
                      />
                     :
+                      page=='rentable'
+                        ?
+                          <RENTABLE
+                            rentable={rentable}
+                            address={address}
+                            nftPlatform={nftPlatform}
+                            web3={web3}
+                          />
+                        :
+                          page=='marketplace'
+                            ?
+                              <MARKETPLACE
+                                address={address}
+                                web3={web3}
+                                nftPlatform={nftPlatform}
+                                platformNFT={platformNFT}
+                                owner={owner}
+                                nftPlatformAddress={nftPlatformAddress}
+                              />
+                            :
             <section class="section is-small">
               <div class="container is-max-desktop">
                 <h1 class="title">
-                  <strong>NFT Platform with Web3 Technologies</strong>
+                  <strong>The Ultimate NFT Platform with Web3 Technologies</strong>
                 </h1>
-                <h1>There are so many interesting NFTs you can make.
-                You'll get <b>1 DBT reward</b> for each NFT. 
-                  {
-                    address
-                      ? <></>
-                      : <>Please connect wallet!!</>
-                  }
+                <h1>
+                  So many interesting NFTs are available for you to mint. You get <b>{mintReward} DBT reward</b> for each NFT you minted.<br></br>
+                  If you rent a NFT in our <b>Rentable NFTs</b>, you get double DBT reward !!
                 </h1>
                 
               </div>
               <div class="container is-max-desktop">
-                <hr></hr><br></br>
+                <hr></hr>
               </div>
               <div class="container is-max-desktop">
                 { allListedItems.map((columns, j) => {
@@ -381,9 +384,9 @@ export default function Home() {
                         { allListedItems.map((item, i) => {
                           if (i >= j && i < j + 4) {
                             return (
-                              <div class="column is-one-quarter">
-                                <img src={item.image} alt="Placeholder image" width={250}
-                                  onClick={() => displayModal(item.nftPrice, item.image, item.tokenUri, item.attributes, item.name, item.description, item.itemId, item.isMinted)}
+                              <div class="column is-one-quarter" key={i}>
+                                <img src={item.image} alt="Placeholder image" width={170}
+                                  onClick={() => displayModal(item.nftPrice, item.image, item.tokenUri, item.attributes, item.name, item.description, item.itemId, item.isMinted, item.metadata)}
                                 />
                                 <p>
                                   { item.isMinted
@@ -400,10 +403,11 @@ export default function Home() {
                                       <h2><strong>Name:</strong> {name}</h2>
                                       <h2><strong>Description:</strong> {description}</h2>
                                       <h2><strong>Price:</strong> {price} ETH</h2>
+
                                       {
                                         attributes.map((attribute, k) => {
                                           return (
-                                            <h2><strong>{attribute.trait_type}:</strong> {attribute.value}</h2>
+                                            <h2 key={k}><strong>{attribute.trait_type}:</strong> {attribute.value}</h2>
                                           )
                                         })
                                       }
@@ -416,11 +420,29 @@ export default function Home() {
                                         isMinted
                                           ? <button class="button is-primary is-small is-rounded" onClick={() => mintNFTwithRoyalty(itemId, price)} disabled>Mint NFT with Royalty</button>
                                           : <button class="button is-primary is-small is-rounded" onClick={() => mintNFTwithRoyalty(itemId, price)}>Mint NFT with Royalty</button>
-                                      }
-                                                                      
+                                      } &nbsp;&nbsp;
+                                      <a class="button is-link is-small is-rounded" href={`${metadata}`} target="_blank">Metadata</a>
                                     </div>
                                   </div>
                                 </Modal>
+                                <ModalS show={showModals}>
+                                  <div class="columns">
+                                      <div class="column is-one-third">
+                                          <></><br></br>
+                                      </div>
+                                      <div class="column is-one-third">
+                                          <img src="../Walk.gif" width="50"/><br></br>
+                                      </div>
+                                      <div class="column is-one-third">
+                                          <></><br></br>
+                                      </div>
+                                  </div>
+                                  <div class="columns">
+                                      <div class="column is-one-third">
+                                          <></><br></br>
+                                      </div>
+                                  </div>
+                                </ModalS>
                               </div>
                             )
                           }

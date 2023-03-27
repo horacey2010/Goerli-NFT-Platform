@@ -12,17 +12,28 @@ contract Platform_NFT is ERC721URIStorage, ERC2981 {
   Counters.Counter private _tokenIds;
 
   address private owner;
+  uint256 private maxSupply;
 
   event MinterChanged(address _from, address _to);
 
   constructor() ERC721("NFT Platform Token", "NPT") {
     owner = msg.sender;
     _setDefaultRoyalty(msg.sender, 300);
+    maxSupply = 100000;
   }
 
   event Mint(address indexed _owner, uint256 tokenId);
 
+  function passMinterRole(address _nftPlatform) public returns(bool) {
+      require(msg.sender==owner, 'Error, only owner can change pass minter role');
+      owner = _nftPlatform;
+      emit MinterChanged(msg.sender, _nftPlatform);
+      return true;
+  }
+
   function mint(string memory _tokenURI, address _nftowner) public returns(uint256) {
+    require(msg.sender == owner, "Only NFT Platform can mint NFT");
+    require(_tokenIds.current() <= maxSupply, "Maximun supply is 100000");
     _tokenIds.increment();
     uint256 newTokenId = _tokenIds.current();
     _safeMint(_nftowner, newTokenId);
@@ -31,9 +42,11 @@ contract Platform_NFT is ERC721URIStorage, ERC2981 {
     return newTokenId;
   }
 
-  function mintWithRoyalty(string memory _tokenURI, address royaltyReceiver, uint96 feeNumerator) public  {
-    uint256 _tokenId = mint(_tokenURI, royaltyReceiver);
-    _setTokenRoyalty(_tokenId, royaltyReceiver, feeNumerator);
+  function mintWithRoyalty(string memory _tokenURI, address royaltyReceiver, uint96 feeNumerator) public returns(uint256) {
+    require(msg.sender == owner, "Only NFT Platform can mint NFT");
+    uint256 newTokenId = mint(_tokenURI, royaltyReceiver);
+    _setTokenRoyalty(newTokenId, royaltyReceiver, feeNumerator);
+    return newTokenId;
   }
 
   function _burn(uint256 _tokenId) internal virtual override {
@@ -42,7 +55,7 @@ contract Platform_NFT is ERC721URIStorage, ERC2981 {
   }
 
   function burnNFT(uint256 _tokenId) public {
-    require(msg.sender == owner);
+    require(msg.sender == owner, "Only NFT Platform can mint NFT");
     _burn(_tokenId);
   }
 

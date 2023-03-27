@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
+import ModalS from './ModalS'
 import axios from 'axios'  // npm install axios
 // npm install nft.storage
 // Import the NFTStorage class and File constructor from the 'nft.storage' package
 import { NFTStorage, File } from 'nft.storage'
 
-export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
+export default function AiNFT({ nftPlatform, mintAIFee, web3, address, nftPlatformAddress, platformNFT }) {
 
     const router = useRouter()
 
@@ -13,6 +14,7 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
     const [image, setImage] = useState()
     const [imageData, setImageData] = useState()
     const [name, setName] = useState('NFT Platform A.I. NFT 2023 Series')
+    const [showModal, setShowModal] = useState(false)
 
     const getDescription = event => {
         event.preventDefault()
@@ -22,35 +24,45 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
     }
 
     const createImage = async () => {
+        console.log("create image...")
         if (description == null) {
             alert(
                 `Please provide image description...`,
             ); 
         }   else {
+            setShowModal(true)
             // You can replace this with different model API's
-            const URL = `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2` 
+            const URL = `https://api-inference.huggingface.co/models/prompthero/openjourneybgy` 
+            // console.log("api kei", `Bearer ${process.env.HUGGING_FACE_API_KEY}`)
+            const api_token = "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"
             
-            const response = await axios({
-                url: URL,
-                method: 'POST',
-                headers: {
-                Authorization: process.env.HUGGING_FACE_API_KEY,
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                },
-                data: JSON.stringify({
-                inputs: description, options: { wait_for_model: true },
-                }),
-                responseType: 'arraybuffer',
-            })  
+            try {
+                const response = await axios({
+                    url: URL,
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${api_token}`,
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inputs: description, options: { wait_for_model: true },
+                    }),
+                    responseType: 'arraybuffer',
+                })  
+                console.log("response", response)
+                const type = response.headers['content-type']
+                const data = response.body
             
-            const type = response.headers['content-type']
-            const data = response.data
-        
-            const base64data = Buffer.from(data).toString('base64')
-            const img = `data:${type};base64,` + base64data // <-- This is so we can render it on the page
-            setImage(img)
-            setImageData(data)
+                const base64data = Buffer.from(body).toString('base64')
+                const img = `data:${type};base64,` + base64data // <-- This is so we can render it on the page
+                setImage(img)
+                setImageData(body)
+                setShowModal(false)
+                
+            } catch (error) {
+                setShowModal(false)
+            }
         }
     }
 
@@ -61,6 +73,7 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
                 `Please provide image ...`,
             ); 
         }   else    {
+            setShowModal(true)
             const nftstorage = new NFTStorage({ token: process.env.NEXT_PUBLIC_NFT_STORAGE_KEY })
             console.log("nftStorage", nftstorage)
             const { ipnft } = await nftstorage.store({
@@ -72,8 +85,9 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
             const _url = `https://ipfs.io/ipfs/${ipnft}/metadata.json`
             console.log("url", _url)
     
-            let _tokenId = await nftPlatform.methods.aiMint(_url).send({ from: address, value: mintAIFee.toString() })
-            router.push("/")
+            let newTokenId = await nftPlatform.methods.aiMint(_url).send({ from: address, value: mintAIFee.toString() })
+            setShowModal(false)
+            router.push("/?page=yourNFT")
         }
     }
 
@@ -84,6 +98,7 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
                 `Please provide image ...`,
             ); 
         }   else    {
+            setShowModal(true)
             const nftstorage = new NFTStorage({ token: process.env.NEXT_PUBLIC_NFT_STORAGE_KEY })
             console.log("nftStorage", nftstorage)
             const { ipnft } = await nftstorage.store({
@@ -95,8 +110,9 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
             const _url = `https://ipfs.io/ipfs/${ipnft}/metadata.json`
             console.log("url", _url)
     
-            let _tokenId = await nftPlatform.methods.aiMintWithRoyalty(_url, address, 300).send({ from: address, value: mintAIFee.toString() })
-            router.push("/")
+            let newTokenId = await nftPlatform.methods.aiMintWithRoyalty(_url, 300).send({ from: address, value: mintAIFee.toString() })
+            setShowModal(false)
+            router.push("/?page=yourNFT")
         }
     }
 
@@ -120,7 +136,7 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
                             <div class="column is-two-third">
                                 <div className='control mb-3'>
                                     { web3 && mintAIFee
-                                        ? <>*Give {web3.utils.fromWei(mintAIFee)} ETH and get <strong>1 DBT</strong> reward to mint a NFT</>
+                                        ? <>*Give <strong>{web3.utils.fromWei(mintAIFee)} ETH</strong> to mint NFT and get <strong>1 DBT</strong> reward.</>
                                         : <></>
                                     }
                                     
@@ -128,6 +144,24 @@ export default function AiNFT({ nftPlatform, mintAIFee, web3, address }) {
                                     <button onClick={createImage} className='button is-primary mt-4 mr-4'>Generate A.I. Image</button>
                                     <button onClick={uploadNFTContentHandler} className='button is-primary mt-4 mr-4'>Mint NFT</button>
                                     <button onClick={uploadNFTContentRoyaltyHandler} className='button is-primary mt-4'>Mint NFT w Royalty</button>
+                                    <ModalS show={showModal}>
+                                        <div class="columns">
+                                            <div class="column is-one-third">
+                                                <></><br></br>
+                                            </div>
+                                            <div class="column is-one-third">
+                                                <img src="../Walk.gif" width="50"/><br></br>
+                                            </div>
+                                            <div class="column is-one-third">
+                                                <></><br></br>
+                                            </div>
+                                        </div>
+                                        <div class="columns">
+                                            <div class="column is-one-third">
+                                                <></><br></br>
+                                            </div>
+                                        </div>
+                                    </ModalS>
                                 </div>
                             </div>
                             <div class="column is-one-third">
