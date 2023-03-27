@@ -421,7 +421,7 @@ export default function Home() {
                                           ? <button class="button is-primary is-small is-rounded" onClick={() => mintNFTwithRoyalty(itemId, price)} disabled>Mint NFT with Royalty</button>
                                           : <button class="button is-primary is-small is-rounded" onClick={() => mintNFTwithRoyalty(itemId, price)}>Mint NFT with Royalty</button>
                                       } &nbsp;&nbsp;
-                                      <a class="button is-link is-small is-rounded" href={`${metadata}`} target="_blank">Metadata</a>
+                                      <a class="button is-link is-small is-rounded" href={`${metadata}`} target="_blank" rel="noreferrer">Metadata</a>
                                     </div>
                                   </div>
                                 </Modal>
