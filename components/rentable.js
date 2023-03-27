@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Modal from './Modal'
 import ModalS from './ModalS'
 
-export default function rentableNFT({ rentable, address, nftPlatform, web3 }) {
+export default function RentableNFT({ rentable, address, nftPlatform, web3 }) {
 
     const [showModal, setShowModal] = useState(false)
     const [showModals, setShowModals] = useState(false)
