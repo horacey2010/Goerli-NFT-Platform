@@ -244,7 +244,7 @@ export default function Marketplace({ address, web3, nftPlatform, platformNFT, o
                                                                     {web3.utils.fromWei(buyEvent.price)} ETH
                                                                 </div>
                                                                 <div class="column">
-                                                                    <a href={`https://goerli.etherscan.io/tx/${buyEvent.hash}`} target="_blank">
+                                                                    <a href={`https://goerli.etherscan.io/tx/${buyEvent.hash}`} target="_blank" rel="noreferrer">
                                                                         {_hash}
                                                                     </a>
                                                                 </div>
