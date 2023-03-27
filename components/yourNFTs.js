@@ -283,14 +283,14 @@ export default function YourNFT({ nftPlatform, nftPlatformAddress, address, plat
                                                                 ? 
                                                                     <div class="columns">
                                                                         <div className='column is-one-third'>
-                                                                            <a class="button is-link is-small is-rounded mr-4" href={`${tokenUri}`} target="_blank">Metadata</a>
+                                                                            <a class="button is-link is-small is-rounded mr-4" href={`${tokenUri}`} target="_blank" rel="noreferrer">Metadata</a>
                                                                             <button class="button is-primary is-small is-rounded mr-2" onClick={() => unlistMarketplace(tokenId)}>Unlist to Marketplace</button>
                                                                         </div>
                                                                     </div>
                                                                 :
                                                                     <div class="columns">
                                                                         <div className='column is-half'>
-                                                                            <a class="button is-link is-small is-rounded mr-4 ml-5" href={`${tokenUri}`} target="_blank">Metadata</a>
+                                                                            <a class="button is-link is-small is-rounded mr-4 ml-5" href={`${tokenUri}`} target="_blank" rel="noreferrer">Metadata</a>
                                                                             <button class="button is-primary is-small is-rounded mr-4" onClick={() => stakeNFT(tokenId)}>Stake</button>
                                                                             <button class="button is-primary is-small is-rounded mr-2" onClick={() => marketplace(tokenId)}>Marketplace</button>
                                                                         </div>
