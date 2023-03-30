@@ -282,7 +282,7 @@ export default function YourNFT({ nftPlatform, nftPlatformAddress, address, plat
                                                             onSale
                                                                 ? 
                                                                     <div class="columns">
-                                                                        <div className='column is-one-third'>
+                                                                        <div className='column is-half'>
                                                                             <a class="button is-link is-small is-rounded mr-4" href={`${tokenUri}`} target="_blank" rel="noreferrer">Metadata</a>
                                                                             <button class="button is-primary is-small is-rounded mr-2" onClick={() => unlistMarketplace(tokenId)}>Unlist to Marketplace</button>
                                                                         </div>
